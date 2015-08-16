@@ -19,8 +19,10 @@ object ShortUrl {
     }
   }
 
+
+  // Command CURL:
+  // curl localhost:9000/urls -X POST --data '{"fullurl" : "http://google.com"}' -H 'Content-type: application/json'
   def shorten(fullUrl: String)(implicit ec: ExecutionContext): Future[ShortUrl] = {
-    // TODO: Compute unique hash
     nextUniqueId map { nextId =>
       hashId(nextId)
     } flatMap { hash =>
