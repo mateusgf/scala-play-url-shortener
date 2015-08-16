@@ -9,9 +9,12 @@ case class ShortUrl(hash: String, fullUrl: String)
 object ShortUrl {
   implicit  val fmt = Json.format[ShortUrl]
 
-  def lookup(hash: String)(implicit ec: ExecutionContext): Future[Option[ShortUrl]] = Future {
-    // TODO: Read mapping from the database
-    Some(ShortUrl(hash, "https://google.com"))
+  def lookup(hash: String)(implicit ec: ExecutionContext): Future[Option[ShortUrl]] = {
+    ShortUrlDAO.findByHash(hash) map { oFullUrl =>
+      oFullUrl map { fullUrl =>
+        ShortUrl(hash, fullUrl)
+      }
+    }
   }
 
   def shorten(fullUrl: String)(implicit ec: ExecutionContext): Future[ShortUrl] = {
