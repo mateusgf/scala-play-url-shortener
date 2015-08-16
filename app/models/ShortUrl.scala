@@ -1,6 +1,8 @@
 package models
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.ws._
+import play.api.Play.current
 
 import play.api.libs.json._
 
@@ -19,21 +21,25 @@ object ShortUrl {
 
   def shorten(fullUrl: String)(implicit ec: ExecutionContext): Future[ShortUrl] = {
     // TODO: Compute unique hash
-    var nextId = nextUniqueId
-    var hash = hashId(nextId)
-
-    ShortUrlDAO.saveMapping(hash, fullUrl) map { _ =>
-      ShortUrl(hash, fullUrl)
+    nextUniqueId map { nextId =>
+      hashId(nextId)
+    } flatMap { hash =>
+      ShortUrlDAO.saveMapping(hash, fullUrl) map { _ =>
+        ShortUrl(hash, fullUrl)
+      }
     }
+
   }
 
 
-  private var nextId = 1
-  private def nextUniqueId: Int = {
-    // TODO: Resolve race condition AND persist between app runs
-    val id = nextId
-    nextId += 1
-    id
+  val countioServiceUrl = "http://count.io/vb/urlshortener/hash+"
+  val countioRequestHolder = WS.url(countioServiceUrl)
+
+
+  private def nextUniqueId(implicit ec: ExecutionContext): Future[Int] = {
+    countioRequestHolder.post("") map { response =>
+      (response.json \ "count").as[Int]
+    }
   }
 
   private val hashIndex = "abcdefgABCDEF12345"
